@@ -26,7 +26,7 @@
             transition: max-height 0.3s ease-in-out;
         }
 
-        /* ポップインアニメーション */
+        /* ポップイン・フェードインアニメーション */
         @keyframes popIn {
             0% { transform: scale(0.85); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
@@ -35,7 +35,15 @@
             animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        /* カスタムスクロールバー非表示（タブ用） */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* カスタムスクロールバー非表示 */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -45,88 +53,94 @@
         }
     </style>
 </head>
-<body class="antialiased min-h-screen pb-24 selection:bg-pink-500 selection:text-white">
+<body class="antialiased min-h-screen pb-20 selection:bg-pink-500 selection:text-white">
 
     <!-- 上部固定バー（管理者用ボタン） -->
     <header class="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex justify-between items-center max-w-md mx-auto">
         <div class="flex items-center space-x-2">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-xs font-semibold text-slate-300 tracking-wider">OFFICIAL FAN SITE</span>
+            <span id="header-page-title" class="text-xs font-semibold text-slate-300 tracking-wider">OFFICIAL FAN SITE</span>
         </div>
         <button onclick="requestAdminAccess()" class="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 w-8 h-8 rounded-full border border-slate-700 flex items-center justify-center transition-all active:scale-95">
             <i class="fas fa-cog text-xs"></i>
         </button>
     </header>
 
-    <!-- メインコンテンツ（スマホ幅固定） -->
-    <main class="max-w-md mx-auto px-4 pt-4 space-y-6">
+    <!-- メインコンテンツ（スマホ幅固定・ページ切替表示） -->
+    <main class="max-w-md mx-auto px-4 pt-4">
         
-        <!-- 1. プロフィールエリア -->
-        <section id="sec-profile" class="scroll-mt-16 text-center pt-2"></section>
+        <!-- ページ 1: ホーム（プロフィール ＋ SNSリンク） -->
+        <div id="page-home" class="page-view space-y-5 animate-fade-in">
+            <section id="sec-profile" class="text-center pt-2"></section>
+            <section id="social-container" class="grid grid-cols-1 gap-2.5"></section>
+        </div>
 
-        <!-- 2. SNSリンクエリア -->
-        <section id="social-container" class="grid grid-cols-1 gap-2.5"></section>
+        <!-- ページ 2: おみくじ -->
+        <div id="page-omikuji" class="page-view hidden space-y-4 animate-fade-in">
+            <section class="bg-slate-900/90 rounded-2xl p-5 shadow-xl border border-slate-800/80 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-28 h-28 bg-pink-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                <h2 class="text-base font-bold mb-3 border-b border-slate-800 pb-2.5 flex items-center text-slate-100">
+                    <span class="w-7 h-7 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center mr-2 text-xs">
+                        <i class="fas fa-crystal-ball"></i>
+                    </span>
+                    今日の運勢おみくじ
+                </h2>
+                <div class="text-center py-2">
+                    <p id="omikuji-desc" class="text-xs text-slate-400 mb-4">今日のあなたの運勢を占ってみよう！（1日1回限定）</p>
+                    <button id="omikuji-button" onclick="drawOmikuji()" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold py-3.5 px-6 rounded-xl transition duration-300 shadow-lg shadow-pink-500/20 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none text-sm flex items-center justify-center">
+                        <i class="fas fa-hand-sparkles mr-2"></i> おみくじを引く
+                    </button>
+                    
+                    <!-- 結果表示エリア -->
+                    <div id="omikuji-result" class="hidden mt-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-center relative overflow-hidden"></div>
+                </div>
+            </section>
+        </div>
 
-        <!-- 3. おみくじエリア -->
-        <section id="sec-omikuji" class="scroll-mt-16 bg-slate-900/90 rounded-2xl p-5 shadow-xl border border-slate-800/80 relative overflow-hidden">
-            <div class="absolute -right-10 -top-10 w-28 h-28 bg-pink-500/10 rounded-full blur-2xl pointer-events-none"></div>
-            <h2 class="text-base font-bold mb-3 border-b border-slate-800 pb-2.5 flex items-center text-slate-100">
-                <span class="w-7 h-7 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center mr-2 text-xs">
-                    <i class="fas fa-ticket-alt"></i>
-                </span>
-                今日の運勢おみくじ
-            </h2>
-            <div class="text-center py-2">
-                <p id="omikuji-desc" class="text-xs text-slate-400 mb-4">今日のあなたの運勢を占ってみよう！（1日1回限定）</p>
-                <button id="omikuji-button" onclick="drawOmikuji()" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold py-3 px-6 rounded-xl transition duration-300 shadow-lg shadow-pink-500/20 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none text-sm flex items-center justify-center">
-                    <i class="fas fa-hand-sparkles mr-2"></i> おみくじを引く
-                </button>
-                
-                <!-- 結果表示エリア -->
-                <div id="omikuji-result" class="hidden mt-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-center relative overflow-hidden"></div>
-            </div>
-        </section>
+        <!-- ページ 3: スケジュール -->
+        <div id="page-schedule" class="page-view hidden space-y-4 animate-fade-in">
+            <section class="bg-slate-900/90 rounded-2xl p-5 shadow-xl border border-slate-800/80">
+                <h2 class="text-base font-bold mb-4 border-b border-slate-800 pb-2.5 flex items-center text-slate-100">
+                    <span class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mr-2 text-xs">
+                        <i class="far fa-calendar-alt"></i>
+                    </span>
+                    今週のスケジュール
+                </h2>
+                <div id="schedule-container" class="space-y-3"></div>
+            </section>
+        </div>
 
-        <!-- 4. スケジュールエリア -->
-        <section id="sec-schedule" class="scroll-mt-16 bg-slate-900/90 rounded-2xl p-5 shadow-xl border border-slate-800/80">
-            <h2 class="text-base font-bold mb-4 border-b border-slate-800 pb-2.5 flex items-center text-slate-100">
-                <span class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mr-2 text-xs">
-                    <i class="far fa-calendar-alt"></i>
-                </span>
-                今週のスケジュール
-            </h2>
-            <div id="schedule-container" class="space-y-3"></div>
-        </section>
-
-        <!-- 5. 配信ルールエリア -->
-        <section id="sec-rules" class="scroll-mt-16 bg-slate-900/90 rounded-2xl p-5 shadow-xl border border-slate-800/80">
-            <h2 class="text-base font-bold mb-4 border-b border-slate-800 pb-2.5 flex items-center text-slate-100">
-                <span class="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mr-2 text-xs">
-                    <i class="fas fa-book"></i>
-                </span>
-                配信のルール
-            </h2>
-            <div id="rules-container" class="space-y-2.5"></div>
-        </section>
+        <!-- ページ 4: 配信ルール -->
+        <div id="page-rules" class="page-view hidden space-y-4 animate-fade-in">
+            <section class="bg-slate-900/90 rounded-2xl p-5 shadow-xl border border-slate-800/80">
+                <h2 class="text-base font-bold mb-4 border-b border-slate-800 pb-2.5 flex items-center text-slate-100">
+                    <span class="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mr-2 text-xs">
+                        <i class="fas fa-book"></i>
+                    </span>
+                    配信のルール
+                </h2>
+                <div id="rules-container" class="space-y-2.5"></div>
+            </section>
+        </div>
 
     </main>
 
     <!-- スマートフォン風 ボトムナビゲーション（フッタータブ） -->
     <nav class="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-lg border-t border-slate-800/80 py-2 px-3">
         <div class="max-w-md mx-auto grid grid-cols-4 gap-1 text-center">
-            <button onclick="scrollToSection('sec-profile', 'nav-profile')" id="nav-profile" class="nav-tab py-1 flex flex-col items-center text-pink-400 transition-colors">
+            <button onclick="switchPage('page-home', 'nav-home', 'PROFILE')" id="nav-home" class="nav-tab py-1 flex flex-col items-center text-pink-400 transition-colors">
                 <i class="fas fa-home text-base mb-1"></i>
                 <span class="text-[10px] font-medium tracking-tight">ホーム</span>
             </button>
-            <button onclick="scrollToSection('sec-omikuji', 'nav-omikuji')" id="nav-omikuji" class="nav-tab py-1 flex flex-col items-center text-slate-400 hover:text-slate-200 transition-colors">
-                <i class="fas fa-sparkles text-base mb-1"></i>
+            <button onclick="switchPage('page-omikuji', 'nav-omikuji', 'OMIKUJI')" id="nav-omikuji" class="nav-tab py-1 flex flex-col items-center text-slate-400 hover:text-slate-200 transition-colors">
+                <i class="fas fa-crystal-ball text-base mb-1"></i>
                 <span class="text-[10px] font-medium tracking-tight">おみくじ</span>
             </button>
-            <button onclick="scrollToSection('sec-schedule', 'nav-schedule')" id="nav-schedule" class="nav-tab py-1 flex flex-col items-center text-slate-400 hover:text-slate-200 transition-colors">
+            <button onclick="switchPage('page-schedule', 'nav-schedule', 'SCHEDULE')" id="nav-schedule" class="nav-tab py-1 flex flex-col items-center text-slate-400 hover:text-slate-200 transition-colors">
                 <i class="far fa-calendar-alt text-base mb-1"></i>
                 <span class="text-[10px] font-medium tracking-tight">予定</span>
             </button>
-            <button onclick="scrollToSection('sec-rules', 'nav-rules')" id="nav-rules" class="nav-tab py-1 flex flex-col items-center text-slate-400 hover:text-slate-200 transition-colors">
+            <button onclick="switchPage('page-rules', 'nav-rules', 'RULES')" id="nav-rules" class="nav-tab py-1 flex flex-col items-center text-slate-400 hover:text-slate-200 transition-colors">
                 <i class="fas fa-shield-alt text-base mb-1"></i>
                 <span class="text-[10px] font-medium tracking-tight">ルール</span>
             </button>
@@ -148,18 +162,18 @@
 
             <!-- モーダルコンテンツ（タブ切り替え） -->
             <div class="flex border-b border-slate-800 bg-slate-950/50 text-xs font-semibold overflow-x-auto no-scrollbar">
-                <button onclick="switchTab('tab-profile')" id="btn-tab-profile" class="tab-btn px-4 py-3 text-pink-400 border-b-2 border-pink-500 whitespace-nowrap">プロフィール・SNS</button>
-                <button onclick="switchTab('tab-omikuji')" id="btn-tab-omikuji" class="tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">おみくじ確率</button>
-                <button onclick="switchTab('tab-schedule')" id="btn-tab-schedule" class="tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">スケジュール</button>
-                <button onclick="switchTab('tab-rules')" id="btn-tab-rules" class="tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">ルール</button>
-                <button onclick="switchTab('tab-data')" id="btn-tab-data" class="tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">データ・設定</button>
+                <button onclick="switchAdminTab('tab-profile')" id="btn-tab-profile" class="admin-tab-btn px-4 py-3 text-pink-400 border-b-2 border-pink-500 whitespace-nowrap">プロフィール・SNS</button>
+                <button onclick="switchAdminTab('tab-omikuji')" id="btn-tab-omikuji" class="admin-tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">おみくじ確率</button>
+                <button onclick="switchAdminTab('tab-schedule')" id="btn-tab-schedule" class="admin-tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">スケジュール</button>
+                <button onclick="switchAdminTab('tab-rules')" id="btn-tab-rules" class="admin-tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">ルール</button>
+                <button onclick="switchAdminTab('tab-data')" id="btn-tab-data" class="admin-tab-btn px-4 py-3 text-slate-400 border-b-2 border-transparent whitespace-nowrap">データ・設定</button>
             </div>
 
             <!-- タブ内容エリア -->
             <div class="p-4 overflow-y-auto space-y-5 flex-1 text-xs text-slate-200">
                 
                 <!-- タブ1: プロフィール・SNS -->
-                <div id="tab-profile" class="tab-content space-y-3">
+                <div id="tab-profile" class="admin-tab-content space-y-3">
                     <h4 class="font-bold text-indigo-400 border-b border-slate-800 pb-1">基本情報</h4>
                     <div>
                         <label class="block mb-1 text-slate-400">名前</label>
@@ -183,18 +197,18 @@
                 </div>
 
                 <!-- タブ2: おみくじ設定 -->
-                <div id="tab-omikuji" class="tab-content hidden space-y-3">
+                <div id="tab-omikuji" class="admin-tab-content hidden space-y-3">
                     <p class="text-slate-400 leading-relaxed">重み（weight）の数値が大きいほど、その結果が出やすくなります。</p>
                     <div id="admin-omikuji-list" class="space-y-2"></div>
                 </div>
 
                 <!-- タブ3: スケジュール -->
-                <div id="tab-schedule" class="tab-content hidden space-y-3">
+                <div id="tab-schedule" class="admin-tab-content hidden space-y-3">
                     <div id="admin-schedule-list" class="space-y-2"></div>
                 </div>
 
                 <!-- タブ4: 配信ルール -->
-                <div id="tab-rules" class="tab-content hidden space-y-3">
+                <div id="tab-rules" class="admin-tab-content hidden space-y-3">
                     <div id="admin-rules-list" class="space-y-2"></div>
                     <button onclick="addRuleItem()" class="bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded-lg text-indigo-300 border border-slate-700 transition">
                         <i class="fas fa-plus mr-1"></i> ルール項目を追加
@@ -202,7 +216,7 @@
                 </div>
 
                 <!-- タブ5: データ管理 -->
-                <div id="tab-data" class="tab-content hidden space-y-5">
+                <div id="tab-data" class="admin-tab-content hidden space-y-5">
                     <div>
                         <h4 class="font-bold text-indigo-400 border-b border-slate-800 pb-1 mb-2">管理者パスワード変更</h4>
                         <div>
@@ -362,6 +376,29 @@
             }
         }
 
+        // 画面（ページ）切替処理
+        function switchPage(pageId, navId, pageTitle) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
+            
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'instant' });
+            }
+
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('text-pink-400');
+                tab.classList.add('text-slate-400');
+            });
+            const activeNav = document.getElementById(navId);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-400');
+                activeNav.classList.add('text-pink-400');
+            }
+
+            document.getElementById('header-page-title').innerText = pageTitle;
+        }
+
         // おみくじ（確率・重み付き抽選）
         function checkOmikujiHistory() {
             const today = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' });
@@ -417,24 +454,6 @@
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-check mr-1.5"></i> 引き終わりました';
             desc.classList.add('hidden');
-        }
-
-        // スムーススクロール＆タブハイライト
-        function scrollToSection(sectionId, tabId) {
-            const element = document.getElementById(sectionId);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-            }
-
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('text-pink-400');
-                tab.classList.add('text-slate-400');
-            });
-            const activeTab = document.getElementById(tabId);
-            if (activeTab) {
-                activeTab.classList.remove('text-slate-400');
-                activeTab.classList.add('text-pink-400');
-            }
         }
 
         // 管理者画面認証・モーダル
@@ -526,9 +545,9 @@
             document.getElementById('admin-modal').classList.add('hidden');
         }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
+        function switchAdminTab(tabId) {
+            document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab-btn').forEach(el => {
                 el.classList.remove('text-pink-400', 'border-pink-500');
                 el.classList.add('text-slate-400', 'border-transparent');
             });
