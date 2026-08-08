@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTuber/ライバー ファンサイト</title>
+    <!-- Tailwind CSS (デザインを整えるためのライブラリ) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome (アイコンを表示するためのライブラリ) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- アコーディオンの開閉アニメーションなどの設定 -->
+    <style>
+        body {
+            background-color: #0f172a; /* 深いネイビーの背景色 */
+            color: #f8fafc;
+        }
+        .accordion-content {
+            transition: max-height 0.3s ease-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .accordion-content.open {
+            max-height: 300px; /* 内容に合わせて適宜調整されます */
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen pb-10">
+
+    <!-- 全体を中央寄せし、スマホの幅に合わせるコンテナ -->
+    <div class="max-w-md mx-auto p-4 space-y-8">
+        
+        <!-- 1. プロフィールエリア（JSで中身が入ります） -->
+        <section id="profile-container" class="text-center pt-8"></section>
+
+        <!-- 2. SNSリンクエリア -->
+        <section id="social-container" class="flex flex-col gap-3"></section>
+
+        <!-- 3. スケジュールエリア -->
+        <section class="bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-700">
+            <h2 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2">
+                <i class="far fa-calendar-alt mr-2 text-indigo-400"></i>今週のスケジュール
+            </h2>
+            <div id="schedule-container" class="space-y-4"></div>
+        </section>
+
+        <!-- 4. 配信ルールエリア -->
+        <section class="bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-700">
+            <h2 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2">
+                <i class="fas fa-book mr-2 text-indigo-400"></i>配信のルール
+            </h2>
+            <div id="rules-container" class="space-y-3"></div>
+        </section>
+
+    </div>
+
+    <!-- ここからJavaScript（データの管理と表示の仕組み） -->
+    <script>
+        // =========================================================
+        // ✍️ データの定義（ライバーさんが普段書き換えるのはここだけ！）
+        // =========================================================
+        const siteData = {
+            // プロフィール情報
+            profile: {
+                name: "テスト",
+                catchphrase: "あなたの生活に寄り添うBGM枠🎧",
+                description: "毎日配信中のライバーです！<br>朝は作業のお供に、夜は寝落ち推奨。初見さん大歓迎✨",
+                avatarUrl: "https://placehold.jp/3d4070/ffffff/150x150.png?text=Icon" // REALITYのアイコン画像URLなどに変更してください
+            },
+            
+            // SNS・外部リンク情報
+            socials: [
+                { name: "REALITYで配信を見る", url: "https://reality.app/...", icon: "fas fa-video", color: "bg-purple-600 hover:bg-purple-700" },
+                { name: "X (Twitter)", url: "https://twitter.com/...", icon: "fab fa-x-twitter", color: "bg-slate-900 border border-slate-600 hover:bg-slate-800" },
+                { name: "マシュマロ (匿名質問)", url: "https://marshmallow-qa.com/...", icon: "fas fa-box-open", color: "bg-pink-600 hover:bg-pink-700" }
+            ],
+            
+            // 配信スケジュール
+            schedule: [
+                { day: "月", events: "07:00 歌雑枠 / 12:00 お昼雑談<br>20:00 対話枠 / 24:00 寝落ち枠" },
+                { day: "火", events: "07:00 歌雑枠 / 12:00 お昼雑談<br>20:00 ゲーム枠 / 24:00 寝落ち枠" },
+                { day: "水", events: "おやすみ💤" },
+                { day: "木", events: "07:00 歌雑枠 / 12:00 お昼雑談<br>20:00 企画枠 / 24:00 寝落ち枠" },
+                { day: "金", events: "07:00 歌雑枠 / 12:00 お昼雑談<br>20:00 華金飲み雑 / 24:00 寝落ち枠" },
+                { day: "土", events: "ゲリラ配信予定！Xをチェックしてね" },
+                { day: "日", events: "20:00 振り返り雑談 / 24:00 寝落ち枠" }
+            ],
+            
+            // 初見さん向けルール（アコーディオンの中身）
+            rules: [
+                { 
+                    title: "🔰 初見さん・潜りさんへ", 
+                    content: "無言での入室、作業用BGMとしての潜り、そのまま寝落ち、すべて大歓迎です！挨拶も無理にしなくて大丈夫ですので、お気軽にどうぞ。" 
+                },
+                { 
+                    title: "💬 コメントについて", 
+                    content: "弾幕によるコメント流しや、他の配信者さんの名前を出す行為はお控えください。みんなで心地よい空間を作りましょう！" 
+                },
+                { 
+                    title: "🎵 歌のリクエスト", 
+                    content: "歌枠中のリクエストは大歓迎です！知っている曲ならワンフレーズだけでも歌います。ボカロ、アニソンが得意です。" 
+                }
+            ]
+        };
+
+        // =========================================================
+        // ⚙️ 画面を描画する処理（ここから下は触らなくてOKです）
+        // =========================================================
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // 1. プロフィールの組み立て
+            const profileHtml = `
+                <div class="relative inline-block mb-4">
+                    <img src="${siteData.profile.avatarUrl}" alt="Avatar" class="w-32 h-32 rounded-full border-4 border-indigo-500 shadow-lg object-cover">
+                </div>
+                <h1 class="text-3xl font-extrabold tracking-tight mb-2">${siteData.profile.name}</h1>
+                <p class="text-indigo-400 font-medium mb-3">${siteData.profile.catchphrase}</p>
+                <p class="text-slate-300 text-sm leading-relaxed px-4">${siteData.profile.description}</p>
+            `;
+            document.getElementById('profile-container').innerHTML = profileHtml;
+
+            // 2. SNSリンクの組み立て
+            let socialsHtml = '';
+            siteData.socials.forEach(social => {
+                socialsHtml += `
+                    <a href="${social.url}" target="_blank" rel="noopener noreferrer" class="${social.color} text-white font-bold py-3 px-4 rounded-full flex items-center justify-center transition duration-300 shadow-md">
+                        <i class="${social.icon} text-lg mr-2"></i> ${social.name}
+                    </a>
+                `;
+            });
+            document.getElementById('social-container').innerHTML = socialsHtml;
+
+            // 3. スケジュールの組み立て
+            let scheduleHtml = '';
+            siteData.schedule.forEach(item => {
+                const isOff = item.events.includes('おやすみ');
+                scheduleHtml += `
+                    <div class="flex items-start border-b border-slate-700 pb-3 last:border-0 last:pb-0">
+                        <div class="w-12 pt-1 font-bold ${isOff ? 'text-slate-500' : 'text-indigo-400'}">${item.day}</div>
+                        <div class="flex-1 text-sm text-slate-300 leading-relaxed ${isOff ? 'text-slate-500' : ''}">${item.events}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('schedule-container').innerHTML = scheduleHtml;
+
+            // 4. ルール（アコーディオン）の組み立て
+            let rulesHtml = '';
+            siteData.rules.forEach((rule, index) => {
+                rulesHtml += `
+                    <div class="border border-slate-600 rounded-lg overflow-hidden bg-slate-900">
+                        <button class="w-full flex justify-between items-center p-4 text-left font-semibold focus:outline-none hover:bg-slate-800 transition" onclick="toggleAccordion(${index})">
+                            <span>${rule.title}</span>
+                            <i id="icon-${index}" class="fas fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                        </button>
+                        <div id="content-${index}" class="accordion-content bg-slate-800 text-sm text-slate-300 px-4">
+                            <div class="py-3">${rule.content}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('rules-container').innerHTML = rulesHtml;
+        });
+
+        // アコーディオンを開け閉めする仕組み
+        function toggleAccordion(index) {
+            const content = document.getElementById(`content-${index}`);
+            const icon = document.getElementById(`icon-${index}`);
+            
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                icon.classList.remove('rotate-180');
+            } else {
+                content.classList.add('open');
+                icon.classList.add('rotate-180');
+            }
+        }
+    </script>
+</body>
+</html>
